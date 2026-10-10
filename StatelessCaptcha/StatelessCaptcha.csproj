@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<LangVersion>latest</LangVersion>
+
+		<!-- ===== اطلاعات پکیج ===== -->
+		<PackageId>StatelessCaptcha</PackageId>
+		<Version>1.0.0</Version>
+		<Authors>Amir Safari</Authors>
+		<Company></Company>
+		<Product>StatelessCaptcha</Product>
+		<Copyright>Copyright © 2025 Amir Safari (Bamirno)</Copyright>
+		<Description>Stateless CAPTCHA generator &amp; validator for ASP.NET Core (no database, no server-side session state)</Description>
+		<PackageTags>captcha;stateless;aspnetcore;skiasharp;security;antibot;bamirno</PackageTags>
+		<PackageProjectUrl>https://github.com/Bamirno/StatelessCaptcha</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/Bamirno/StatelessCaptcha.git</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+		<NoWarn>$(NoWarn);CS1591</NoWarn>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="SkiaSharp" Version="3.116.1" />
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\README.md')" />
+	</ItemGroup>
+
+</Project>

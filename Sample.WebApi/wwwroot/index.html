@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>دموی کپچای Stateless</title>
+    <style>
+        :root {
+            --bg: #f5f5f5;
+            --card: #ffffff;
+            --primary: #0d47a1;
+            --danger: #b71c1c;
+            --ok: #1b5e20;
+            --border: #e0e0e0;
+            --text: #212121;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: "Segoe UI", Tahoma, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            width: 100%;
+            max-width: 480px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, .08);
+        }
+
+        h1 { font-size: 1.25rem; margin: 0 0 16px; }
+
+        label { display: block; font-size: .85rem; margin: 12px 0 4px; font-weight: 600; }
+
+        input[type="text"], input[type="email"], input[type="number"] {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font: inherit;
+        }
+
+        .captcha-row { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+
+        .captcha-row img {
+            height: 80px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            cursor: pointer;
+            background: #fff;
+        }
+
+        .captcha-hint { font-size: .75rem; color: #757575; }
+
+        button {
+            margin-top: 20px;
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            background: var(--primary);
+            color: #fff;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+            button:hover { background: #09327e; }
+
+        #result {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: .85rem;
+            display: none;
+        }
+
+        #result.ok { background: #e8f5e9; color: var(--ok); border: 1px solid #a5d6a7; }
+        #result.err { background: #ffebee; color: var(--danger); border: 1px solid #ef9a9a; }
+
+        pre {
+            background: #263238;
+            color: #eceff1;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: .75rem;
+            overflow: auto;
+            margin-top: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>دموی کپچای Stateless</h1>
+
+        <label for="name">نام</label>
+        <input type="text" id="name" placeholder="نام شما">
+
+        <label for="email">ایمیل</label>
+        <input type="email" id="email" placeholder="name@example.com">
+
+        <label for="amount">مبلغ (تومان)</label>
+        <input type="number" id="amount" value="100000">
+
+        <label for="captchaCode">کد امنیتی</label>
+        <div class="captcha-row">
+            <img id="captchaImage" alt="تصویر کپچا" title="برای تولید تصویر جدید کلیک کنید">
+            <span class="captcha-hint">برای تصویر جدید کلیک کنید</span>
+        </div>
+        <input type="text" id="captchaCode" placeholder="کد ۶ رقمی" inputmode="numeric" style="margin-top:8px">
+        <input type="hidden" id="captchaToken">
+
+        <button id="submitBtn" type="button">ثبت سفارش</button>
+
+        <div id="result"></div>
+
+        <details>
+            <summary style="margin-top:16px; font-size:.8rem; cursor:pointer">توکن فعلی (برای تست)</summary>
+            <pre id="tokenView">—</pre>
+        </details>
+    </div>
+
+    <script>
+        const imageEl = document.getElementById('captchaImage');
+        const tokenEl = document.getElementById('captchaToken');
+        const codeEl = document.getElementById('captchaCode');
+        const tokenView = document.getElementById('tokenView');
+        const resultEl = document.getElementById('result');
+
+        async function refreshCaptcha() {
+            try {
+                const res = await fetch('/api/captcha');
+                if (!res.ok) throw new Error('خطا در دریافت کپچا');
+                const data = await res.json();
+
+                imageEl.src = data.image;
+                tokenEl.value = data.token;
+                tokenView.textContent = data.token;
+                codeEl.value = '';
+                show('کپچای جدید بارگذاری شد.', 'ok');
+            } catch (err) {
+                show(err.message, 'err');
+            }
+        }
+
+        function show(message, kind) {
+            resultEl.style.display = 'block';
+            resultEl.className = kind;
+            resultEl.textContent = message;
+        }
+
+        imageEl.addEventListener('click', refreshCaptcha);
+
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const form = new FormData();
+            form.append('name', document.getElementById('name').value);
+            form.append('email', document.getElementById('email').value);
+            form.append('amount', document.getElementById('amount').value);
+            form.append('captchaCode', codeEl.value);
+            form.append('captchaToken', tokenEl.value);
+
+            try {
+                const res = await fetch('/api/orders/submit', { method: 'POST', body: form });
+                const data = await res.json();
+
+                if (res.ok) {
+                    show(data.message, 'ok');
+                } else {
+                    show(data.message || 'خطا', 'err');
+                    // بعد از خطا حتماً کپچای جدید بگیرید.
+                    refreshCaptcha();
+                }
+            } catch (err) {
+                show(err.message, 'err');
+            }
+        });
+
+        refreshCaptcha();
+    </script>
+</body>
+</html>
